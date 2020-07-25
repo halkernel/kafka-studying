@@ -33,6 +33,11 @@
             <version>1.7.30</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.twitter</groupId>
+            <artifactId>hbc-core</artifactId>
+            <version>RELEASE</version>
+        </dependency>
     </dependencies>
 
 </project>
