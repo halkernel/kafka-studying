@@ -1,6 +1,7 @@
 package com.github.halkernel.data;
 
 import com.github.halkernel.config.TokenConfig;
+import com.github.halkernel.producer.ProducerDemo;
 import com.google.common.collect.Lists;
 import com.twitter.hbc.ClientBuilder;
 import com.twitter.hbc.core.Client;
@@ -11,6 +12,12 @@ import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
+import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,13 +41,23 @@ public class TwitterProducer {
     public void run(){
         BlockingQueue<String> msgQueue = new LinkedBlockingQueue<>(100000);
 
+        //create twitter client
         Client client = createTwitterClient(msgQueue);
         client.connect();
         //TODO
-        //create twitter client
-        //create kafka producer
-        //loop to send tweets to kafka
 
+        //create kafka producer
+        KafkaProducer<String, String> producer = createKafkaProducer();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("Stopping application");
+            logger.info("Shutting down client");
+            client.stop();
+            logger.info("Shutting down producer");
+            producer.close();
+        }));
+
+        //loop to send tweets to kafka
         while (!client.isDone()) {
             String message = null;
             try {
@@ -51,9 +68,31 @@ public class TwitterProducer {
             }
             if(message != null){
                 logger.info(message);
+                producer.send(new ProducerRecord<>("twitter_tweets", null, message), new Callback() {
+                    @Override
+                    public void onCompletion(RecordMetadata recordMetadata, Exception e) {
+                        if(e != null){
+                            logger.error("Error: ", e);
+                        }
+                    }
+                });
             }
         }
         client.stop();
+    }
+
+    private KafkaProducer<String, String> createKafkaProducer() {
+        String bootstrapServer = "127.0.0.1:9092";
+        String message = String.format("hello from %s", ProducerDemo.class.getSimpleName());
+
+        //create producer properties
+        Properties properties = new Properties();
+
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer);
+        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+        return new KafkaProducer<>(properties);
     }
 
     public Client createTwitterClient(BlockingQueue<String> msgQueue){
