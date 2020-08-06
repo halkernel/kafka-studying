@@ -1,4 +1,4 @@
-package com.github.halkernel.thread;
+package thread;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

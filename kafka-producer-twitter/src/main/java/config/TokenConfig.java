@@ -1,4 +1,4 @@
-package com.github.halkernel.config;
+package config;
 
 
 import java.io.FileNotFoundException;

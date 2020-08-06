@@ -1,4 +1,4 @@
-package com.github.halkernel.producer;
+package producer;
 
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -6,17 +6,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 
-public class ProducerDemoWithCallBack {
+public class ProducerDemoWithKeys {
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
 
-        final Logger logger = LoggerFactory.getLogger(ProducerDemoWithCallBack.class);
+        final Logger logger = LoggerFactory.getLogger(ProducerDemoWithKeys.class);
 
         String bootstrapServer = "127.0.0.1:9092";
-        String message = String.format("hello from %s", ProducerDemoWithCallBack.class.getSimpleName());
-        System.out.println(message);
 
         //create producer properties
         Properties properties = new Properties();
@@ -33,9 +32,15 @@ public class ProducerDemoWithCallBack {
 
         for (int i = 0; i < 10; i++) {
 
+            String topic = "first_topic";
+            String message = String.format("hello from %s number %s", ProducerDemoWithKeys.class.getSimpleName(), i);
+            String key = "id_" + i;
+
             //create producer record
             ProducerRecord<String, String> producerRecord
-                    = new ProducerRecord<String, String>("first_topic", message + " " + i);
+                    = new ProducerRecord<String, String>(topic, key, message);
+
+            logger.info("Key:" + key);
 
             producer.send(producerRecord, new Callback() {
                 public void onCompletion(RecordMetadata recordMetadata, Exception e) {
@@ -53,7 +58,7 @@ public class ProducerDemoWithCallBack {
                         logger.error("Error while producing", e);
                     }
                 }
-            });
+            }).get(); //forcing the send to be synchronous but pay attention because it is a bad practice
         }
         //send data - asynchronously
 

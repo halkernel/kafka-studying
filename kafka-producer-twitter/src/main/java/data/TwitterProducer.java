@@ -1,7 +1,6 @@
-package com.github.halkernel.data;
+package data;
 
-import com.github.halkernel.config.TokenConfig;
-import com.github.halkernel.producer.ProducerDemo;
+
 import com.google.common.collect.Lists;
 import com.twitter.hbc.ClientBuilder;
 import com.twitter.hbc.core.Client;
@@ -12,6 +11,7 @@ import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
+import config.TokenConfig;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -83,7 +83,7 @@ public class TwitterProducer {
 
     private KafkaProducer<String, String> createKafkaProducer() {
         String bootstrapServer = "127.0.0.1:9092";
-        String message = String.format("hello from %s", ProducerDemo.class.getSimpleName());
+        String message = String.format("hello from %s", this.getClass().getSimpleName());
 
         //create producer properties
         Properties properties = new Properties();

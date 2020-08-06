@@ -1,4 +1,4 @@
-package com.github.halkernel.consumer;
+package consumer;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

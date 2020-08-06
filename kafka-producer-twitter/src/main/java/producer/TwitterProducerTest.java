@@ -1,6 +1,7 @@
-package com.github.halkernel.producer;
+package producer;
 
-import com.github.halkernel.data.TwitterProducer;
+
+import data.TwitterProducer;
 
 public class TwitterProducerTest {
 

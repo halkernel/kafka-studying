@@ -1,4 +1,4 @@
-package com.github.halkernel.producer;
+package producer;
 
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
