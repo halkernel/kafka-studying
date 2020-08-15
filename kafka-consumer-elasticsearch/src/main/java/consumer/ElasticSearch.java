@@ -27,6 +27,7 @@ public class ElasticSearch {
         KafkaConsumer<String, String> consumer = RestHighLevelClientCreator.createConsumer("twitter_tweets");
         while (true) { //just for understanding, not recommendable
             ConsumerRecords<String, String> consumerRecords = consumer.poll(Duration.ofMillis(1000));
+            logger.info("received: " + consumerRecords.count());
             for (ConsumerRecord<String, String> record : consumerRecords) {
 
                 //there are 2 strategies for creating ids
@@ -46,10 +47,19 @@ public class ElasticSearch {
                 String responseId = response.getId();
                 logger.info(responseId);
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(10);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            }
+            logger.info("commiting the offsets");
+            consumer.commitSync();
+            logger.info("offsets have been commited");
+
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
