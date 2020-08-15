@@ -4,6 +4,8 @@ import com.google.gson.JsonParser;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -26,8 +28,13 @@ public class ElasticSearch {
 
         KafkaConsumer<String, String> consumer = RestHighLevelClientCreator.createConsumer("twitter_tweets");
         while (true) { //just for understanding, not recommendable
+
             ConsumerRecords<String, String> consumerRecords = consumer.poll(Duration.ofMillis(1000));
-            logger.info("received: " + consumerRecords.count());
+
+            Integer recordCount = consumerRecords.count();
+            logger.info("received: " + recordCount);
+
+            BulkRequest bulkRequest = new BulkRequest();
             for (ConsumerRecord<String, String> record : consumerRecords) {
 
                 //there are 2 strategies for creating ids
@@ -35,31 +42,33 @@ public class ElasticSearch {
                 //String id = record.topic() + "_" + record.partition() + "_" + record.offset();
 
                 // 2 twitter feed specific id
-                String id = extractIdFromTweet(record.value());
+                try{
+                    String id = extractIdFromTweet(record.value());
 
-                IndexRequest indexRequest = new IndexRequest(
-                        "twitter",
-                        "tweets",
-                        id // this is to make our consumer idempotent
-                ).source(record.value().getBytes(StandardCharsets.US_ASCII), XContentType.JSON);
+                    IndexRequest indexRequest = new IndexRequest(
+                            "twitter",
+                            "tweets",
+                            id // this is to make our consumer idempotent
+                    ).source(record.value().getBytes(StandardCharsets.US_ASCII), XContentType.JSON);
 
-                IndexResponse response = client.index(indexRequest, RequestOptions.DEFAULT);
-                String responseId = response.getId();
-                logger.info(responseId);
+                    bulkRequest.add(indexRequest); //add to our bulkrequest
+                }catch (NullPointerException e){
+                    logger.warn("skipping bad data: " + record.value());
+                }
+
+            }
+            if(recordCount >= 0){
+                BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+
+                logger.info("commiting the offsets");
+                consumer.commitSync();
+                logger.info("offsets have been commited");
+
                 try {
-                    Thread.sleep(10);
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            }
-            logger.info("commiting the offsets");
-            consumer.commitSync();
-            logger.info("offsets have been commited");
-
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
 
